@@ -38,8 +38,6 @@
     <!-- Arquivos auxiliares/legacy excluídos -->
     <Compile Remove="Automacoes_Solidos\SolidosSyncCruzetaCanaletaHelpers.cs" />
     <Compile Remove="PastaSolidosCorredoresNovaInterfaceLogicaAntiga\COPIARCORREDOR.cs" />
-    <Compile Remove="PastaSolidosCorredoresNovaInterfaceLogicaAntiga\*-ENG_GLEISON.cs" />
-    <Compile Remove="IFC\*-ENG_GLEISON.cs" />
   </ItemGroup>
 
   <ItemGroup>

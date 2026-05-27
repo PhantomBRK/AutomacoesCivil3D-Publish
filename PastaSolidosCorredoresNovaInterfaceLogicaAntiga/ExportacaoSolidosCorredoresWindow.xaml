@@ -1,0 +1,462 @@
+﻿<Window x:Class="AutomacoesCivil3D.EXTRAIR_SOLIDOS_CORREDORES.ExportacaoSolidosCorredoresWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Exportação de Sólidos dos Corredores"
+        Width="1180"
+        Height="760"
+        MinWidth="1040"
+        MinHeight="680"
+        WindowStartupLocation="CenterScreen"
+        Background="#F3F6FA"
+        FontFamily="Bahnschrift">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <SolidColorBrush x:Key="HeroBrush" Color="#10324B" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#157A87" />
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FCFDFE" />
+        <SolidColorBrush x:Key="BorderBrushSoft" Color="#D6DFE8" />
+        <SolidColorBrush x:Key="TextBrush" Color="#173042" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#607080" />
+
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="Padding" Value="22" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrushSoft}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="InputStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrushSoft}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="18,12" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="#E7EDF3" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="0"
+                Grid.Column="0"
+                Background="{StaticResource HeroBrush}"
+                CornerRadius="28"
+                Padding="26" Margin="0,0,0,79" Grid.RowSpan="2">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="0,0,8,0">
+                <Border Width="74"
+                        Height="74"
+                        CornerRadius="20"
+                        Background="#1A90A0"
+                        HorizontalAlignment="Left">
+                    <Viewbox Margin="18">
+                        <TextBlock Text="C3D"
+                                   Foreground="White"
+                                   FontWeight="Bold" />
+                    </Viewbox>
+                </Border>
+
+                <TextBlock Margin="0,22,0,8"
+                           FontSize="28"
+                           FontWeight="SemiBold"
+                           Foreground="White"
+                           Text="Exportação guiada" />
+
+                <TextBlock TextWrapping="Wrap"
+                           Foreground="#C9DAE7"
+                           FontSize="14"
+                           LineHeight="22"
+                           Text="Selecione os corredores, ajuste o escopo da extração e envie os sólidos para um DWG de destino com relatório opcional." />
+
+                <Border Margin="0,24,0,0"
+                        Style="{StaticResource CardStyle}"
+                        Background="#F6FAFD"
+                        BorderThickness="0" Height="165">
+                    <StackPanel>
+                        <TextBlock Text="Resumo da seleção"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}" />
+                        <UniformGrid Margin="0,16,0,0"
+                                     Columns="2"
+                                     Rows="2">
+                            <StackPanel Margin="0,0,10,10">
+                                <TextBlock Text="Corredores" Foreground="{StaticResource MutedBrush}" />
+                                <TextBlock Text="{Binding SelectedCorridorsCount}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource HeroBrush}" />
+                            </StackPanel>
+                            <StackPanel Margin="10,0,0,10">
+                                <TextBlock Text="Códigos previstos" Foreground="{StaticResource MutedBrush}" />
+                                <TextBlock Text="{Binding SelectedCodeEstimate}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource HeroBrush}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,10,0">
+                                <TextBlock Text="Shapes" Foreground="{StaticResource MutedBrush}" />
+                                <TextBlock Text="{Binding SelectedShapeCorridorsCount}" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                            </StackPanel>
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="Links" Foreground="{StaticResource MutedBrush}" />
+                                <TextBlock Text="{Binding SelectedLinkCorridorsCount}" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,18,0,0"
+                        Style="{StaticResource CardStyle}"
+                        Background="#0F415E"
+                        BorderThickness="0">
+                    <StackPanel>
+                        <TextBlock Text="Property Sets"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="White" />
+                        <TextBlock Margin="0,8,0,14"
+                                   TextWrapping="Wrap"
+                                   Foreground="#D0E2EE"
+                                   FontSize="13"
+                                   Text="Essenciais são os PSets nativos do Civil 3D (Corridor *) — anexados automaticamente em todo sólido extraído de corredor. Os PSets do template LOIN (Pset_A/B/C/D - Dados/Informacoes/Fisicas/Layer IFC) são informativos: se faltarem, são criados durante a exportação." />
+                        <ItemsControl ItemsSource="{Binding PropertySetStatuses}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,10,10"
+                                            Padding="12,8"
+                                            CornerRadius="14"
+                                            Background="{Binding Background}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{Binding Foreground}" />
+                                            <TextBlock Text="{Binding Caption}" FontSize="12" Foreground="{Binding Foreground}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,18,0,0"
+                        Style="{StaticResource CardStyle}"
+                        Background="#FFF6EF"
+                        BorderBrush="#F2D8C8">
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="#7B583F"
+                               FontSize="13"
+                               LineHeight="20"
+                               Text="A exportação gera sólidos temporários no DWG ativo, aplica PSETs, copia para o destino e pode limpar a origem no final. Use o relatório CSV quando precisar rastreabilidade de handles, layers e propriedades. Se existir um arquivo _CodeNames.json ao lado do DWG ativo, a rotina usa as categorias definidas nele." />
+                </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <ScrollViewer Grid.Row="0"
+                      Grid.Column="2"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Destino da exportação"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Margin="0,6,0,0"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   FontSize="13"
+                                   Text="Defina o DWG que receberá os sólidos e, se desejar, um relatório CSV para conferência posterior." />
+
+                        <Grid Margin="0,18,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="DWG de destino" Foreground="{StaticResource MutedBrush}" />
+                                <TextBox Style="{StaticResource InputStyle}"
+                                         Text="{Binding DestinationPath, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <Button Grid.Column="2"
+                                    VerticalAlignment="Bottom"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Content="Escolher arquivo"
+                                    Click="BrowseDestination_Click" />
+                        </Grid>
+
+                        <CheckBox Margin="0,18,0,10"
+                                  Foreground="{StaticResource TextBrush}"
+                                  FontSize="14"
+                                  Content="Gerar relatório CSV com handles, layers e valores dos Property Sets"
+                                  IsChecked="{Binding GenerateReport}" />
+
+                        <Grid Visibility="{Binding GenerateReport, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Relatório CSV" Foreground="{StaticResource MutedBrush}" />
+                                <TextBox Style="{StaticResource InputStyle}"
+                                         Text="{Binding ReportPath, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <Button Grid.Column="2"
+                                    VerticalAlignment="Bottom"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Content="Salvar como"
+                                    Click="BrowseReport_Click" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,18,0,0"
+                        Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                Padding="18"
+                                CornerRadius="18"
+                                Background="#F6FBFC"
+                                BorderBrush="#D9ECF0"
+                                BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Tipos de geometria"
+                                           FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Margin="0,6,0,16"
+                                           TextWrapping="Wrap"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           FontSize="13"
+                                           Text="Defina se a rotina deve gerar sólidos a partir de shapes, links ou ambos." />
+                                <CheckBox Margin="0,0,0,10"
+                                          Foreground="{StaticResource TextBrush}"
+                                          FontSize="14"
+                                          Content="Exportar shapes do corredor"
+                                          IsChecked="{Binding ExportShapes}" />
+                                <CheckBox Foreground="{StaticResource TextBrush}"
+                                          FontSize="14"
+                                          Content="Exportar links do corredor"
+                                          IsChecked="{Binding ExportLinks}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2"
+                                Padding="18"
+                                CornerRadius="18"
+                                Background="#FFF9F1"
+                                BorderBrush="#F0E2C8"
+                                BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Pós-processamento"
+                                           FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Margin="0,6,0,16"
+                                           TextWrapping="Wrap"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           FontSize="13"
+                                           Text="Controle a limpeza da origem depois da cópia e mantenha a exportação previsível." />
+                                <CheckBox Margin="0,0,0,10"
+                                          Foreground="{StaticResource TextBrush}"
+                                          FontSize="14"
+                                          Content="Apagar sólidos temporários do DWG ativo após copiar"
+                                          IsChecked="{Binding RemoveSourceSolidsAfterCopy}" />
+                                <TextBlock TextWrapping="Wrap"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           FontSize="12"
+                                           LineHeight="18"
+                                           Text="A cópia para o destino acontece antes da limpeza para evitar perda de dados em falhas." />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Border Margin="0,18,0,0"
+                        Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left"
+                                       Text="Corredores disponíveis"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextBrush}" />
+                            <TextBlock DockPanel.Dock="Right"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource MutedBrush}"
+                                       FontSize="13"
+                                       Text="{Binding FilteredCorridorsLabel}" />
+                        </DockPanel>
+
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0"
+                                     Style="{StaticResource InputStyle}"
+                                     Text="{Binding CorridorFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Filtrar por nome do corredor" />
+
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Content="Selecionar todos"
+                                    Click="SelectAllVisible_Click" />
+                            <Button Grid.Column="4"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Content="Limpar"
+                                    Click="ClearSelection_Click" />
+                            <Button Grid.Column="6"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Content="Inverter"
+                                    Click="InvertVisibleSelection_Click" />
+                        </Grid>
+
+                        <Border Grid.Row="4"
+                                CornerRadius="18"
+                                BorderBrush="{StaticResource BorderBrushSoft}"
+                                BorderThickness="1"
+                                Background="White">
+                            <ListView ItemsSource="{Binding CorridorsView}"
+                                      BorderThickness="0"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListView.View>
+                                    <GridView AllowsColumnReorder="False">
+                                        <GridViewColumn Width="70">
+                                            <GridViewColumn.Header>
+                                                <TextBlock Text="Usar" />
+                                            </GridViewColumn.Header>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox HorizontalAlignment="Center"
+                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="320"
+                                                        DisplayMemberBinding="{Binding Name}">
+                                            <GridViewColumn.Header>
+                                                <TextBlock Text="Corredor" />
+                                            </GridViewColumn.Header>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="90"
+                                                        DisplayMemberBinding="{Binding ShapeCodeCount}">
+                                            <GridViewColumn.Header>
+                                                <TextBlock Text="Shapes" />
+                                            </GridViewColumn.Header>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="90"
+                                                        DisplayMemberBinding="{Binding LinkCodeCount}">
+                                            <GridViewColumn.Header>
+                                                <TextBlock Text="Links" />
+                                            </GridViewColumn.Header>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="110"
+                                                        DisplayMemberBinding="{Binding TotalCodeCount}">
+                                            <GridViewColumn.Header>
+                                                <TextBlock Text="Códigos" />
+                                            </GridViewColumn.Header>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="150"
+                                                        DisplayMemberBinding="{Binding SourceTypeLabel}">
+                                            <GridViewColumn.Header>
+                                                <TextBlock Text="Origem" />
+                                            </GridViewColumn.Header>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Border>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="1"
+                Grid.ColumnSpan="3"
+                Margin="0,20,0,0"
+                Style="{StaticResource CardStyle}"
+                Padding="18">
+            <DockPanel LastChildFill="False">
+                <Border DockPanel.Dock="Left"
+                        Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Padding="14,10"
+                        CornerRadius="14"
+                        Background="{Binding StatusBackground}">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="{Binding StatusForeground}"
+                               FontSize="13"
+                               TextWrapping="Wrap" />
+                </Border>
+
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal">
+                    <Button Width="118"
+                            Margin="0,0,10,0"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Content="Cancelar"
+                            Click="Cancel_Click" />
+                    <Button Width="170"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Exportar sólidos"
+                            IsEnabled="{Binding CanExport}"
+                            Click="Export_Click" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
+
+

@@ -1,0 +1,442 @@
+<Window x:Class="AutomacoesCivil3D.IfcInfraConfigEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Editor de Configuracao IFC Infra"
+        Width="1480"
+        Height="900"
+        MinWidth="1280"
+        MinHeight="780"
+        WindowStartupLocation="CenterScreen"
+        Background="#F2F5F8"
+        FontFamily="Bahnschrift">
+    <Window.Resources>
+        <SolidColorBrush x:Key="HeroBrush" Color="#10324B" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#147A8A" />
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FCFDFE" />
+        <SolidColorBrush x:Key="SoftBorderBrush" Color="#D4DEE7" />
+        <SolidColorBrush x:Key="TextBrush" Color="#173042" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#5F7384" />
+
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="InputStyle" TargetType="TextBox">
+            <Setter Property="MinHeight" Value="40" />
+            <Setter Property="Padding" Value="12,9" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+
+        <Style x:Key="ComboStyle" TargetType="ComboBox">
+            <Setter Property="MinHeight" Value="40" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="18,11" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="#E6EDF2" />
+        </Style>
+
+        <Style x:Key="ToggleStyle" TargetType="CheckBox">
+            <Setter Property="Margin" Value="0,0,12,10" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="FontSize" Value="13.5" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="18" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Grid.Row="0" Background="{StaticResource HeroBrush}" CornerRadius="28" Padding="24">
+            <StackPanel>
+                <Border Width="82" Height="82" CornerRadius="18" Background="#1A8F9F">
+                    <Viewbox Margin="20">
+                        <TextBlock Text="IFC" Foreground="White" FontWeight="Bold" />
+                    </Viewbox>
+                </Border>
+                <TextBlock Margin="0,24,0,8" Text="Editor IFC Infra" FontSize="28" FontWeight="SemiBold" Foreground="White" />
+                <TextBlock TextWrapping="Wrap" Foreground="#C9DAE7" FontSize="14" LineHeight="22"
+                           Text="Edite os campos principais do IfcInfraConfiguration.json com foco em exportacoes IFC de infraestrutura mais consistentes." />
+                <Border Margin="0,22,0,0" Style="{StaticResource CardStyle}" Background="#F6FAFD" BorderThickness="0">
+                    <StackPanel>
+                        <TextBlock Text="Contexto" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Margin="0,14,0,4" Style="{StaticResource LabelStyle}" Text="Desenho" />
+                        <TextBlock Text="{Binding DrawingName}" FontWeight="SemiBold" Foreground="{StaticResource HeroBrush}" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,14,0,4" Style="{StaticResource LabelStyle}" Text="Origem" />
+                        <TextBlock Text="{Binding SourceDescription}" FontSize="12.5" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+                <Border Margin="0,18,0,0" Style="{StaticResource CardStyle}" Background="#0F415E" BorderThickness="0">
+                    <StackPanel>
+                        <TextBlock Text="Preset recomendado" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                        <TextBlock Margin="0,10,0,0" Text="{Binding RecommendedChecklist}" Foreground="#D0E2EE" FontSize="12.5" TextWrapping="Wrap" LineHeight="20" />
+                    </StackPanel>
+                </Border>
+                <Border Margin="0,18,0,0" Style="{StaticResource CardStyle}" Background="#FFF5E8" BorderBrush="#F4D8B2">
+                    <TextBlock Text="{Binding MetadataChecklist}" Foreground="#7E5E37" FontSize="12.5" TextWrapping="Wrap" LineHeight="20" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Column="2" Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource LabelStyle}" Text="Arquivo de configuracao" />
+                                <TextBox Style="{StaticResource InputStyle}" Text="{Binding ConfigFilePath, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <Button Grid.Column="2" VerticalAlignment="Bottom" Style="{StaticResource SecondaryButtonStyle}" Content="Escolher" Click="ChooseConfigFile_Click" />
+                            <Button Grid.Column="4" VerticalAlignment="Bottom" Style="{StaticResource SecondaryButtonStyle}" Content="Recarregar" Click="Reload_Click" />
+                            <Button Grid.Column="6" VerticalAlignment="Bottom" Style="{StaticResource SecondaryButtonStyle}" Content="Amostra" Click="LoadSample_Click" />
+                            <Button Grid.Column="8" VerticalAlignment="Bottom" Style="{StaticResource SecondaryButtonStyle}" Content="Preset" Click="ApplyPreset_Click" />
+                        </Grid>
+
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="0.9*" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="0.9*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource LabelStyle}" Text="Pasta de saida padrao" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding General.DefaultOutputFolder, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" Content="Pasta" Click="ChooseOutputFolder_Click" />
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource LabelStyle}" Text="Versao IFC" />
+                                <ComboBox Style="{StaticResource ComboStyle}" ItemsSource="{Binding IfcVersionOptions}" SelectedItem="{Binding General.IfcVersion}" IsEditable="True" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Style="{StaticResource LabelStyle}" Text="Progresso" />
+                                <ComboBox Style="{StaticResource ComboStyle}" ItemsSource="{Binding ProgressModeOptions}" SelectedItem="{Binding Progress.ReportProgressMode}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <Border Margin="0,18,0,0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Qualidade e interoperabilidade" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                            <WrapPanel Margin="0,18,0,0">
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Gerar log" IsChecked="{Binding General.GenerateLogFile}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="OwnerHistory" IsChecked="{Binding General.GenerateOwnerHistory}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Abortar desatualizados" IsChecked="{Binding General.AbortIfOutOfDate}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Salvar GlobalIds no DWG" IsChecked="{Binding General.AutomaticSaveDocument}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Propriedades do Civil 3D" IsChecked="{Binding General.ExportPropertiesFromCivilEntityProperties}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Materiais" IsChecked="{Binding General.ExportMaterials}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Somente layers visiveis" IsChecked="{Binding General.VisibleLayersOnly}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Georreferenciar sem EPSG" IsChecked="{Binding General.ExportNonEpsgProjectedCoordinateSystem}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Base point pelo minimo" IsChecked="{Binding General.BasePointMinExtents}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Base point no root placement" IsChecked="{Binding General.ProjectBasePointOnRootPlacement}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Preferir IFCZIP" IsChecked="{Binding General.DefaultIfcZip}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Progresso verboso" IsChecked="{Binding Progress.Verbose}" />
+                            </WrapPanel>
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Tolerancia metrica" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding General.FacetDistanceToleranceMetric, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Desvio geometrico" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding General.GeometryDeviationTolerance, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Delimitador" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding General.PropertyListDelimiters, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Conteudo exportado" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                            <WrapPanel Margin="0,18,0,0">
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Alignments" IsChecked="{Binding Content.ExportAlignments}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Corridors" IsChecked="{Binding Content.ExportCorridors}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Corridor links" IsChecked="{Binding Content.ExportCorridorLinks}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Corridor feature lines" IsChecked="{Binding Content.ExportCorridorFeatureLines}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Fallback geometry" IsChecked="{Binding Content.ExportCorridorShapesAsFallBackGeometry}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Swept geometry" IsChecked="{Binding Content.ExportCorridorShapesAsSweptGeometry}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Feature lines" IsChecked="{Binding Content.ExportFeatureLines}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Surfaces" IsChecked="{Binding Content.ExportSurfaces}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Solids" IsChecked="{Binding Content.ExportSolids}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Bodies" IsChecked="{Binding Content.ExportBodies}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="AutoCAD surfaces" IsChecked="{Binding Content.ExportAutoCadSurfaces}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="SubD mesh" IsChecked="{Binding Content.ExportSubDMesh}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="COGO points" IsChecked="{Binding Content.ExportCogoPoints}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Block references" IsChecked="{Binding Content.ExportBlockReferences}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Points" IsChecked="{Binding Content.ExportPoints}" />
+                                <CheckBox Style="{StaticResource ToggleStyle}" Content="Polylines" IsChecked="{Binding Content.ExportPolylines}" />
+                            </WrapPanel>
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Alerta base point (km)" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding General.BasePointWarningKilometers, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Erro base point (km)" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding General.BasePointErrorKilometers, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Margin="0,18,0,0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Projeto" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                            <Grid Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Nome" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="LongName" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding Project.LongName, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,14,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="ObjectType" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding Project.ObjectType, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Fase" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding Project.Phase, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="GlobalId" />
+                            <TextBox Style="{StaticResource InputStyle}" Text="{Binding Project.GlobalId, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Descricao" />
+                            <TextBox Style="{StaticResource InputStyle}" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap"
+                                     Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Facility / Site" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                            <Grid Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Classe IFC" />
+                                    <ComboBox Style="{StaticResource ComboStyle}" ItemsSource="{Binding FacilityTypeOptions}" SelectedItem="{Binding Facility.IfcExportAs}" IsEditable="True" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="Nome" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding Facility.Name, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,14,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="LongName" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding Facility.LongName, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="ObjectType" />
+                                    <TextBox Style="{StaticResource InputStyle}" Text="{Binding Facility.ObjectType, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="GlobalId" />
+                            <TextBox Style="{StaticResource InputStyle}" Text="{Binding Facility.GlobalId, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Descricao" />
+                            <TextBox Style="{StaticResource InputStyle}" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap"
+                                     Text="{Binding Facility.Description, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Margin="0,18,0,0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Endereco do facility" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                            <Grid Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"><TextBlock Style="{StaticResource LabelStyle}" Text="Cidade" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding FacilityAddress.Town, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Style="{StaticResource LabelStyle}" Text="Regiao" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding FacilityAddress.Region, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                <StackPanel Grid.Column="4"><TextBlock Style="{StaticResource LabelStyle}" Text="CEP" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding FacilityAddress.PostalCode, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                <StackPanel Grid.Column="6"><TextBlock Style="{StaticResource LabelStyle}" Text="Pais" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding FacilityAddress.Country, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                            </Grid>
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Linhas de endereco (separe por ;)" />
+                            <TextBox Style="{StaticResource InputStyle}" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" Text="{Binding FacilityAddress.AddressLines, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Telefones (separe por ;)" />
+                            <TextBox Style="{StaticResource InputStyle}" Text="{Binding FacilityAddress.TelephoneNumbers, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Emails do endereco (separe por ;)" />
+                            <TextBox Style="{StaticResource InputStyle}" Text="{Binding FacilityAddress.ElectronicMailAddresses, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Website" />
+                            <TextBox Style="{StaticResource InputStyle}" Text="{Binding FacilityAddress.WwwHomePageUrl, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Autor e templates" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                            <Grid Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"><TextBlock Style="{StaticResource LabelStyle}" Text="Organizacao" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding Author.OrganizationName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Style="{StaticResource LabelStyle}" Text="ID da organizacao" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding Author.OrganizationIdentification, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                            </Grid>
+                            <Grid Margin="0,14,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"><TextBlock Style="{StaticResource LabelStyle}" Text="Nome" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding Author.GivenName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Style="{StaticResource LabelStyle}" Text="Sobrenome" /><TextBox Style="{StaticResource InputStyle}" Text="{Binding Author.FamilyName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                            </Grid>
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Email" />
+                            <TextBox Style="{StaticResource InputStyle}" Text="{Binding Author.OrganizationEmail, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="Identificacao / Authorization" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Style="{StaticResource InputStyle}" Text="{Binding Author.Identification, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Column="2" Style="{StaticResource InputStyle}" Text="{Binding Author.Authorization, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="PropertyTemplatePaths (separe por ;)" />
+                            <TextBox Style="{StaticResource InputStyle}" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" Text="{Binding Templates.PropertyTemplatePaths, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,14,0,6" Style="{StaticResource LabelStyle}" Text="PropertyManagementPaths (separe por ;)" />
+                            <TextBox Style="{StaticResource InputStyle}" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" Text="{Binding Templates.PropertyManagementPaths, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Grid.ColumnSpan="3" Margin="0,18,0,0" Style="{StaticResource CardStyle}" Padding="18">
+            <DockPanel LastChildFill="False">
+                <Border DockPanel.Dock="Left" Padding="14,10" CornerRadius="14" Background="{Binding StatusBackground}">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="{Binding StatusForeground}" FontSize="13" TextWrapping="Wrap" />
+                </Border>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Width="118" Margin="0,0,10,0" Style="{StaticResource SecondaryButtonStyle}" Content="Cancelar" Click="Cancel_Click" />
+                    <Button Width="150" Margin="0,0,10,0" Style="{StaticResource SecondaryButtonStyle}" Content="Salvar" Click="Save_Click" />
+                    <Button Width="186" Style="{StaticResource PrimaryButtonStyle}" Content="Salvar e exportar" Click="SaveAndExport_Click" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

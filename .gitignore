@@ -1,0 +1,105 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.pdb
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Tooling
+.claude/worktrees/
+.claude/cache/
+
+# Backups / temporários
+tmp_*/
+*_bak/
+*.bak
+*-Copia.*
+*-DESKTOP-*.csproj
+*.rar
+*.zip
+RECUPERACAO_*/
+
+# Drawings de teste e binários do AutoCAD
+*.dwg
+*.dwl
+*.dwl2
+*.bak
+*.sv$
+
+# Pasta de logs / saídas
+*.log
+acad*.err
+
+# Autodesk DLLs (licença proprietária — não redistribuir)
+# Aplicado em qualquer lugar, mas refs/ é exceção (DLLs necessárias para build)
+accoremgd.dll
+acdbmgd*.dll
+acmgd.dll
+AdWindows.dll
+Aecc*.dll
+Aec*.dll
+Autodesk.*.dll
+OSGeo.*.dll
+
+# DLLs do plugin SOLIDOS — IGNORAR exceto em refs/
+SOLIDOS_*.dll
+tbn2net.dll
+TBN2NET_*.dll
+HtmlEditor.dll
+
+# Exceção: incluir refs/ explicitamente
+!refs/
+!refs/*.dll
+
+# Pastas de localização Autodesk (cs-CZ, de-DE, etc.)
+cs/
+cs-CZ/
+de/
+de-DE/
+en/
+en-GB/
+en-US/
+es/
+es-ES/
+fr/
+fr-FR/
+hu-HU/
+it/
+it-IT/
+ja/
+ja-JP/
+ko/
+ko-KR/
+pl/
+pl-PL/
+pt-BR/
+ru/
+ru-RU/
+tr/
+zh-CN/
+zh-Hans/
+zh-Hant/
+zh-TW/
+
+# OneDrive lixo
+*.tmp
+~$*
+desktop.ini
+Thumbs.db

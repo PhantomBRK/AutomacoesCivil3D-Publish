@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <NoWarn>$(NoWarn);NU1507</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="ClosedXML" Version="0.105.0" />
+    <PackageVersion Include="CloseXmlSourceGenerator" Version="0.0.0.18" />
+    <PackageVersion Include="EPPlus" Version="8.5.0" />
+    <PackageVersion Include="EPPlus.Interfaces" Version="8.4.0" />
+    <PackageVersion Include="ExcelDataReader" Version="3.8.0" />
+    <PackageVersion Include="ExcelDataReader.DataSet" Version="3.8.0" />
+    <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
+    <PackageVersion Include="ICSharpCode.Decompiler" Version="9.1.0.7988" />
+    <PackageVersion Include="Microsoft.VisualBasic" Version="10.3.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageVersion Include="PayPal" Version="1.9.1" />
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.11" />
+    <PackageVersion Include="Xbim.Common" Version="6.0.578" />
+    <PackageVersion Include="Xbim.Essentials" Version="6.0.578" />
+    <PackageVersion Include="Xbim.Geometry.Engine.Interop" Version="5.1.820" />
+    <PackageVersion Include="Xbim.Ifc" Version="6.0.578" />
+    <PackageVersion Include="Xbim.Ifc2x3" Version="6.0.578" />
+    <PackageVersion Include="Xbim.Ifc4" Version="6.0.578" />
+    <PackageVersion Include="Xbim.Ifc4x3" Version="6.0.578" />
+    <PackageVersion Include="Xbim.IO.Esent" Version="6.0.578" />
+    <PackageVersion Include="Xbim.IO.MemoryModel" Version="6.0.578" />
+  </ItemGroup>
+</Project>

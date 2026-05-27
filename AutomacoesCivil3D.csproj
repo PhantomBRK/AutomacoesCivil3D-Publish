@@ -1,0 +1,155 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Platforms>AnyCPU;x64;ARM64;x86</Platforms>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AssemblyName>AutomacoesCivil3D</AssemblyName>
+    <AssemblyTitle>AutomacoesCivil3D</AssemblyTitle>
+    <PackageId>$(AssemblyName)</PackageId>
+    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+    <PetrobrasBundleDir>$(AppData)\Autodesk\ApplicationPlugins\AutomacoesPetrobras.bundle\Contents\</PetrobrasBundleDir>
+    <AcadDir Condition="'$(AcadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2026</AcadDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugType>embedded</DebugType>
+    <Optimize>True</Optimize>
+    <WarningLevel>1</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
+    <WarningLevel>1</WarningLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Resources removidos do compile (assets visuais não publicados) -->
+    <Compile Remove="Resources\**" />
+    <EmbeddedResource Remove="Resources\**" />
+    <None Remove="Resources\**" />
+
+    <!-- Arquivos auxiliares/legacy excluídos -->
+    <Compile Remove="Automacoes_Solidos\SolidosSyncCruzetaCanaletaHelpers.cs" />
+    <Compile Remove="PastaSolidosCorredoresNovaInterfaceLogicaAntiga\COPIARCORREDOR.cs" />
+    <Compile Remove="PastaSolidosCorredoresNovaInterfaceLogicaAntiga\*-ENG_GLEISON.cs" />
+    <Compile Remove="IFC\*-ENG_GLEISON.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- AutoCAD Core -->
+    <Reference Include="accoremgd">
+      <HintPath>$(AcadDir)\accoremgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="acdbmgd">
+      <HintPath>$(AcadDir)\acdbmgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="acdbmgdbrep">
+      <HintPath>$(AcadDir)\acdbmgdbrep.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="acmgd">
+      <HintPath>$(AcadDir)\acmgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AdWindows">
+      <HintPath>$(AcadDir)\AdWindows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+
+    <!-- AutoCAD Architecture -->
+    <Reference Include="AecBaseMgd">
+      <HintPath>$(AcadDir)\ACA\AecBaseMgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AecPropDataMgd">
+      <HintPath>$(AcadDir)\ACA\AecPropDataMgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+
+    <!-- Civil 3D -->
+    <Reference Include="AeccDbMgd">
+      <HintPath>$(AcadDir)\C3D\AeccDbMgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Autodesk.AECC.Interop.Roadway">
+      <HintPath>$(AcadDir)\C3D\Autodesk.AECC.Interop.Roadway.dll</HintPath>
+      <Private>True</Private>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+
+    <!-- Office Interop (Excel) -->
+    <Reference Include="Microsoft.Office.Interop.Excel">
+      <HintPath>$(MSBuildThisFileDirectory)refs\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <Private>True</Private>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+
+    <!-- Plug-in Petrobras SOLIDOS (incluído em refs/) -->
+    <Reference Include="SOLIDOS_2025">
+      <HintPath>$(MSBuildThisFileDirectory)refs\SOLIDOS_2025.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="tbn2net">
+      <HintPath>$(MSBuildThisFileDirectory)refs\tbn2net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="TBN2NET_LISP_2025">
+      <HintPath>$(MSBuildThisFileDirectory)refs\TBN2NET_LISP_2025.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="HtmlEditor">
+      <HintPath>$(MSBuildThisFileDirectory)refs\HtmlEditor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" />
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="EPPlus.Interfaces" />
+    <PackageReference Include="ExcelDataReader" />
+    <PackageReference Include="ExcelDataReader.DataSet" />
+    <PackageReference Include="HtmlAgilityPack" />
+    <PackageReference Include="ICSharpCode.Decompiler" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.VisualBasic" />
+    <PackageReference Include="Xbim.Common" />
+    <PackageReference Include="Xbim.Essentials" />
+    <PackageReference Include="Xbim.Ifc" />
+    <PackageReference Include="Xbim.Ifc2x3" />
+    <PackageReference Include="Xbim.Ifc4" />
+    <PackageReference Include="Xbim.Ifc4x3" />
+    <PackageReference Include="Xbim.IO.Esent" />
+    <PackageReference Include="Xbim.IO.MemoryModel" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="IFC\Pos_Process_Ifc4x0.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="IFC\Pos_Process_PAV.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="IFC\QUANTITIES_IFC.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
+  <Target Name="DeployAutomacoesPetrobrasBundle" AfterTargets="Build" Condition="Exists('$(PetrobrasBundleDir)')">
+    <ItemGroup>
+      <BundleFiles Include="$(TargetDir)*" Exclude="$(TargetDir)*.pdb;$(TargetDir)*.xml;$(TargetDir)acad*.err" />
+    </ItemGroup>
+    <MakeDir Directories="$(PetrobrasBundleDir)" />
+    <Copy SourceFiles="@(BundleFiles)" DestinationFiles="@(BundleFiles->'$(PetrobrasBundleDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" ContinueOnError="WarnAndContinue" />
+  </Target>
+
+</Project>

@@ -2,7 +2,7 @@
 
 Plugin para **AutoCAD Civil 3D 2026** em C# (.NET 8), focado em automações de:
 
-- **Drenagem urbana e estruturas hidráulicas** (PVs, canaletas, cruzetas, vazão para combate a incêndio)
+- **Drenagem ON-SITE Petrobras seguindo a norma N-0038** (PVs, canaletas, cruzetas, vazão para combate a incêndio)
 - **Exportação IFC** de corredores, superfícies e estruturas, com mapeamento de Property Sets (Xbim)
 - **Corredores Civil 3D** — cópia, edição de frequência, seccionamento por alinhamentos, exclusão de pontas
 - **Property Sets do AutoCAD** — wizard, exportação JSON, cascata, drenagem, sinalização

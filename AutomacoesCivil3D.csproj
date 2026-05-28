@@ -11,9 +11,10 @@
     <Platforms>AnyCPU;x64;ARM64;x86</Platforms>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <AssemblyName>AutomacoesCivil3D</AssemblyName>
-    <AssemblyTitle>AutomacoesCivil3D</AssemblyTitle>
+    <AssemblyName>ERGECivil3DPlugin</AssemblyName>
+    <AssemblyTitle>ERGECivil3DPlugin</AssemblyTitle>
     <PackageId>$(AssemblyName)</PackageId>
+    <RootNamespace>AutomacoesCivil3D</RootNamespace>
     <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
     <PetrobrasBundleDir>$(AppData)\Autodesk\ApplicationPlugins\AutomacoesPetrobras.bundle\Contents\</PetrobrasBundleDir>
     <AcadDir Condition="'$(AcadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2026</AcadDir>

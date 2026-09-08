@@ -439,3 +439,23 @@ end;
 Para integrar a geração automática do instalador ao processo de compilação do Visual Studio, configure este comando no evento pós-build (Post-Build Event) do projeto quando compilado sob o perfil de produção (Release2026):
 
 \"C:\Program Files (x86)\Inno Setup 6\ISCC.exe\" \"\$(ProjectDir)installer\erge-plugin-installer.iss\"
+
+## 10. Planejador de Vias (Planejamento Urbano em Planta) {#planejador-de-vias}
+
+Módulo de planejamento viário interativo, inspirado nas ferramentas modernas de *roads planning*: o projetista escolhe uma seção-tipo, desenha o eixo em planta com pré-visualização ao vivo das bordas da via acompanhando o cursor e, ao cruzar ou tocar eixos de outras vias do módulo, as junções são formadas automaticamente — a caixa do cruzamento é recortada e arcos de retorno de meio-fio são inseridos em cada quadrante.
+
+### 10.1. Comandos {#planejador-de-vias-comandos}
+
+| **Comando** | **Função** |
+|----|----|
+| PLANEJADOR_VIAS | Abre a janela modeless: editor de seções-tipo com pré-visualização, parâmetros de desenho e ações |
+| PLANVIAS_DESENHAR | Desenho interativo do eixo (jig com preview da via); Enter/Concluir encerra, Desfazer remove o último ponto |
+| PLANVIAS_DE_POLYLINES | Gera vias completas a partir de polylines existentes (as polylines originais são mantidas) |
+| PLANVIAS_QUANTITATIVOS | Take-off aproximado de planejamento (áreas por elemento e comprimento de meio-fio) com exportação CSV |
+
+### 10.2. Conceitos e Persistência {#planejador-de-vias-conceitos}
+
+- **Seção-tipo:** sequência de elementos transversais (faixa, acostamento, estacionamento, ciclovia, canteiro, calçada, meio-fio) da esquerda para a direita, com larguras em metros. Padrões embutidos: *Boulevard Urbano*, *Coletora Primária* e *Via Local*; personalizações do usuário são gravadas em `%AppData%\AutomacoesCivil3D\PlanejadorVias\SecoesTipo.json`.
+- **Junções automáticas:** suportam cruzamentos em X, junções em T e cantos em L, com raio de meio-fio configurável. Anéis externos (fundo de meio-fio, calçada) com profundidade igual nas duas vias saem concêntricos ao retorno, mantendo banda de largura constante.
+- **Rastreabilidade:** cada entidade gerada recebe XData no RegApp `AUTOMACOES_PLANVIAS` (via, papel, offset), é distribuída em camadas `PLANVIAS_*` por tipo de elemento e agrupada em um `Group` por via.
+- **Limitações da versão inicial:** os trechos são assumidos localmente retos no entorno imediato do cruzamento (caso típico de malha urbana); os quantitativos não descontam as caixas das junções; os eixos permanecem contínuos através das junções.

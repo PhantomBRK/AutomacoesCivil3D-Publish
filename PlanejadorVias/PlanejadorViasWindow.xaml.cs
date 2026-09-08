@@ -325,6 +325,15 @@ namespace AutomacoesCivil3D
             ExecutarComando("PLANVIAS_QUANTITATIVOS");
         }
 
+        private void GerarCorredores_Click(object sender, RoutedEventArgs e)
+        {
+            // O raio do meio-fio define a folga das regiões do corredor nas junções.
+            if (AtualizarEstado())
+            {
+                ExecutarComando("PLANVIAS_CRIAR_CORREDORES");
+            }
+        }
+
         private void ExecutarComando(string nomeComando)
         {
             try

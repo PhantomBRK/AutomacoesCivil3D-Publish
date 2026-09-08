@@ -25,7 +25,7 @@ Plugin AutoCAD Civil 3D 2026 em C# (.NET 8). Não é projeto cross-platform, nã
 Arquivos `.cs` ficam soltos na raiz E em subpastas. Subpastas mais ativas:
 
 - `IFC/` — exportação/importação IFC, mapeamento de Property Sets, Xbim. Arquivos críticos: `IfcInfraConfigEditorService.cs`, `IfcSolidosDrainageBinder.cs`, `Pos_Process_PAV.cs`, `QUANTITIES_IFC.cs`.
-- `PlanejadorVias/` — planejamento urbano em planta: seções-tipo configuráveis, desenho interativo de vias com jig, junções automáticas com concordância de meio-fio, quantitativos. Entry point: `PlanejadorViasCommand.cs` (comando `PLANEJADOR_VIAS`).
+- `PlanejadorVias/` — planejamento urbano em planta: seções-tipo configuráveis, desenho interativo de vias com jig, junções automáticas com concordância de meio-fio, quantitativos e geração automática de corredores (alinhamento→perfil→assembly→corredor, em `PlanejadorViasCorredores.cs`). Entry point: `PlanejadorViasCommand.cs` (comando `PLANEJADOR_VIAS`).
 - `Rotinas Petrobras/` — comandos específicos Petrobras (drenagem, escavação, estruturas). Entry point: `Main.cs`.
 - `Rotinas DNIT/` — exportação IFC para corredores, Property Sets de sinalização.
 - `Rotinas PropertySets/` — manipulação de PSets do AutoCAD.

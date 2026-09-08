@@ -222,6 +222,8 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="Quantitativos" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
                             Click="Quantitativos_Click" />
+                    <Button Content="Gerar corredores" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
+                            Click="GerarCorredores_Click" />
                     <Button Content="Vias a partir de polylines" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
                             Click="ViasDePolylines_Click" />
                     <Button Content="✏ Desenhar via" Style="{StaticResource PrimaryButtonStyle}"

@@ -753,10 +753,17 @@ namespace AutomacoesCivil3D
                 }
 
                 ResultadoCorredores resultado;
+                ResultadoCorredores resultadoJuncoes;
                 using (Transaction tr = db.TransactionManager.StartTransaction())
                 {
                     resultado = PlanejadorViasCorredores.CriarCorredores(
                         tr, db, civilDoc, superficieId, PlanejadorViasEstado.Opcoes.RaioMeioFio);
+
+                    // Interseções: baselines nos retornos de meio-fio, amarradas aos
+                    // greides recém-criados das vias.
+                    resultadoJuncoes = PlanejadorViasCorredoresJuncoes.CriarCorredoresDeJuncoes(
+                        tr, db, civilDoc, superficieId);
+
                     tr.Commit();
                 }
 
@@ -764,6 +771,10 @@ namespace AutomacoesCivil3D
                     $"\nCorredores do Planejador de Vias: {resultado.Alinhamentos} alinhamento(s), " +
                     $"{resultado.Perfis} perfil(is), {resultado.Assemblies} assembly(ies) nova(s), " +
                     $"{resultado.Corredores} corredor(es) criado(s).");
+                editor.WriteMessage(
+                    $"\nInterseções: {resultadoJuncoes.Alinhamentos} retorno(s) de meio-fio processado(s) " +
+                    $"no corredor \"{PlanejadorViasCorredoresJuncoes.NomeCorredorJuncoes}\".");
+                resultado.Avisos.AddRange(resultadoJuncoes.Avisos);
 
                 foreach (string aviso in resultado.Avisos.Distinct().Take(15))
                 {

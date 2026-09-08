@@ -40,7 +40,9 @@ namespace AutomacoesCivil3D
             Database db,
             CivilDocument civilDoc,
             ObjectId superficieId,
-            double raioMeioFio)
+            double raioMeioFio,
+            Editor? editor,
+            MapeamentoAssemblies mapeamento)
         {
             ResultadoCorredores resultado = new ResultadoCorredores();
 
@@ -60,7 +62,7 @@ namespace AutomacoesCivil3D
                 try
                 {
                     CriarParaVia(tr, db, civilDoc, via, vias, superficieId, raioMeioFio,
-                        assembliesPorSecao, ref posicaoAssembly, resultado);
+                        assembliesPorSecao, ref posicaoAssembly, resultado, editor, mapeamento);
                 }
                 catch (System.Exception ex)
                 {
@@ -85,7 +87,9 @@ namespace AutomacoesCivil3D
             double raioMeioFio,
             Dictionary<string, ObjectId> assembliesPorSecao,
             ref int posicaoAssembly,
-            ResultadoCorredores resultado)
+            ResultadoCorredores resultado,
+            Editor? editor,
+            MapeamentoAssemblies mapeamento)
         {
             Polyline? eixo = tr.GetObject(via.EixoId, OpenMode.ForRead, false) as Polyline;
             if (eixo == null || eixo.IsErased)
@@ -137,9 +141,16 @@ namespace AutomacoesCivil3D
             AdicionarPVIs(tr, perfil, alinhamento, superficieId, nomeVia, resultado.Avisos);
             resultado.Perfis++;
 
-            // 3. Assembly da seção-tipo (reutilizada por seção).
-            ObjectId assemblyId = ObterOuCriarAssembly(
-                tr, civilDoc, via.Secao, assembliesPorSecao, ref posicaoAssembly, resultado);
+            // 3. Assembly da seção-tipo: mapeamento do usuário → seleção na tela →
+            //    montagem automática (opcional). Sem assembly, o corredor não é criado.
+            ObjectId assemblyId = ResolverAssemblyDaSecao(
+                tr, civilDoc, via.Secao, assembliesPorSecao, ref posicaoAssembly, resultado, editor, mapeamento);
+            if (assemblyId.IsNull)
+            {
+                resultado.Avisos.Add($"{nomeVia} (\"{via.Secao}\"): assembly não definida — alinhamento e perfil " +
+                    "criados, corredor NÃO. Use PLANVIAS_DEFINIR_ASSEMBLIES e rode novamente.");
+                return;
+            }
 
             // 4. Corredor com regiões paradas nas junções.
             ObjectId corredorId = civilDoc.CorridorCollection.Add("COR_" + nomeVia);
@@ -250,6 +261,124 @@ namespace AutomacoesCivil3D
         // ------------------------------------------------------------------
         // Assembly montada automaticamente a partir da seção-tipo
         // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Resolve a assembly de uma seção-tipo na ordem: mapeamento salvo do usuário →
+        /// assembly homônima no desenho → seleção interativa na tela (memorizada) →
+        /// montagem automática (apenas se o usuário escolher). Null = sem assembly.
+        /// </summary>
+        public static ObjectId ResolverAssemblyDaSecao(
+            Transaction tr,
+            CivilDocument civilDoc,
+            string nomeSecao,
+            Dictionary<string, ObjectId> cache,
+            ref int posicaoAssembly,
+            ResultadoCorredores resultado,
+            Editor? editor,
+            MapeamentoAssemblies mapeamento)
+        {
+            string chave = string.IsNullOrWhiteSpace(nomeSecao) ? "(sem seção)" : nomeSecao;
+
+            ObjectId emCache;
+            if (cache.TryGetValue(chave, out emCache))
+            {
+                return emCache;
+            }
+
+            // a) Mapeamento persistido do usuário.
+            string? nomeMapeado;
+            if (mapeamento.PorSecao.TryGetValue(chave, out nomeMapeado) && !string.IsNullOrWhiteSpace(nomeMapeado))
+            {
+                ObjectId mapeada = LocalizarAssemblyPorNome(tr, civilDoc, nomeMapeado);
+                if (!mapeada.IsNull)
+                {
+                    cache[chave] = mapeada;
+                    return mapeada;
+                }
+
+                resultado.Avisos.Add($"Assembly mapeada \"{nomeMapeado}\" (seção \"{chave}\") não existe neste desenho.");
+            }
+
+            // b) Assembly homônima já existente no desenho.
+            ObjectId homonima = LocalizarAssemblyPorNome(tr, civilDoc, chave);
+            if (!homonima.IsNull)
+            {
+                cache[chave] = homonima;
+                return homonima;
+            }
+
+            // c) Seleção interativa (memorizada no mapeamento para as próximas vezes).
+            if (editor != null)
+            {
+                ObjectId selecionada = SelecionarAssembly(
+                    tr, editor,
+                    $"\nSelecione a ASSEMBLY para a seção \"{chave}\"",
+                    out bool quisAutomatica);
+
+                if (!selecionada.IsNull)
+                {
+                    Civil.Assembly? assemblySelecionada =
+                        tr.GetObject(selecionada, OpenMode.ForRead, false) as Civil.Assembly;
+                    if (assemblySelecionada != null)
+                    {
+                        mapeamento.PorSecao[chave] = assemblySelecionada.Name;
+                        mapeamento.Salvar();
+                    }
+
+                    cache[chave] = selecionada;
+                    return selecionada;
+                }
+
+                if (!quisAutomatica)
+                {
+                    cache[chave] = ObjectId.Null;
+                    return ObjectId.Null; // usuário pulou
+                }
+            }
+
+            // d) Montagem automática com o catálogo stock (melhor esforço).
+            ObjectId automatica = ObterOuCriarAssembly(tr, civilDoc, nomeSecao, cache, ref posicaoAssembly, resultado);
+            cache[chave] = automatica;
+            return automatica;
+        }
+
+        /// <summary>
+        /// Prompt de seleção de assembly com opções [Automatica/Pular].
+        /// Retorna Null quando o usuário pula; quisAutomatica indica a keyword.
+        /// </summary>
+        public static ObjectId SelecionarAssembly(Transaction tr, Editor editor, string mensagem, out bool quisAutomatica)
+        {
+            quisAutomatica = false;
+
+            PromptEntityOptions opcoes = new PromptEntityOptions(
+                mensagem + " ou [Automatica/Pular] <Pular>: ");
+            opcoes.SetRejectMessage("\nIsso não é uma assembly do Civil 3D.");
+            opcoes.AddAllowedClass(typeof(Civil.Assembly), false);
+            opcoes.Keywords.Add("Automatica");
+            opcoes.Keywords.Add("Pular");
+            opcoes.AllowNone = true;
+
+            while (true)
+            {
+                PromptEntityResult selecao = editor.GetEntity(opcoes);
+                if (selecao.Status == PromptStatus.OK)
+                {
+                    return selecao.ObjectId;
+                }
+
+                if (selecao.Status == PromptStatus.Keyword)
+                {
+                    if (selecao.StringResult == "Automatica")
+                    {
+                        quisAutomatica = true;
+                    }
+
+                    return ObjectId.Null;
+                }
+
+                return ObjectId.Null; // Enter/Esc = pular
+            }
+        }
 
         private static ObjectId ObterOuCriarAssembly(
             Transaction tr,
@@ -752,17 +881,20 @@ namespace AutomacoesCivil3D
                     return;
                 }
 
+                MapeamentoAssemblies mapeamento = MapeamentoAssemblies.Carregar();
+
                 ResultadoCorredores resultado;
                 ResultadoCorredores resultadoJuncoes;
                 using (Transaction tr = db.TransactionManager.StartTransaction())
                 {
                     resultado = PlanejadorViasCorredores.CriarCorredores(
-                        tr, db, civilDoc, superficieId, PlanejadorViasEstado.Opcoes.RaioMeioFio);
+                        tr, db, civilDoc, superficieId, PlanejadorViasEstado.Opcoes.RaioMeioFio,
+                        editor, mapeamento);
 
                     // Interseções: baselines nos retornos de meio-fio, amarradas aos
                     // greides recém-criados das vias.
                     resultadoJuncoes = PlanejadorViasCorredoresJuncoes.CriarCorredoresDeJuncoes(
-                        tr, db, civilDoc, superficieId);
+                        tr, db, civilDoc, superficieId, editor, mapeamento);
 
                     tr.Commit();
                 }
@@ -793,6 +925,106 @@ namespace AutomacoesCivil3D
             catch (System.Exception ex)
             {
                 editor.WriteMessage($"\nErro ao criar corredores: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Define/atualiza o conjunto de assemblies usadas nos corredores: uma por
+        /// seção-tipo presente no desenho e uma para as interseções. As escolhas são
+        /// memorizadas em %AppData% e valem para as próximas gerações.
+        /// </summary>
+        [CommandMethod("PLANVIAS_DEFINIR_ASSEMBLIES")]
+        public void DefinirAssemblies()
+        {
+            Editor editor = Manager.DocEditor;
+            Database db = Manager.DocData;
+
+            try
+            {
+                CivilDocument civilDoc = Manager.DocCivil;
+                MapeamentoAssemblies mapeamento = MapeamentoAssemblies.Carregar();
+
+                List<string> secoes;
+                using (Transaction tr = db.TransactionManager.StartTransaction())
+                {
+                    secoes = PlanejadorViasJuncoes.CarregarVias(tr, db).Values
+                        .Select(v => string.IsNullOrWhiteSpace(v.Secao) ? "(sem seção)" : v.Secao)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    if (secoes.Count == 0)
+                    {
+                        secoes = SecoesTipoCatalogo.ObterSecoes().Select(s => s.Nome).ToList();
+                    }
+
+                    foreach (string secao in secoes)
+                    {
+                        string? atual;
+                        mapeamento.PorSecao.TryGetValue(secao, out atual);
+                        string sufixoAtual = string.IsNullOrWhiteSpace(atual) ? "(nenhuma)" : atual!;
+
+                        bool quisAutomatica;
+                        ObjectId escolhida = PlanejadorViasCorredores.SelecionarAssembly(
+                            tr, editor,
+                            $"\nSeção \"{secao}\" — assembly atual: {sufixoAtual}. Selecione a nova (Enter mantém)",
+                            out quisAutomatica);
+
+                        if (!escolhida.IsNull)
+                        {
+                            Civil.Assembly? assembly = tr.GetObject(escolhida, OpenMode.ForRead, false) as Civil.Assembly;
+                            if (assembly != null)
+                            {
+                                mapeamento.PorSecao[secao] = assembly.Name;
+                                editor.WriteMessage($"\n  \"{secao}\" → \"{assembly.Name}\".");
+                            }
+                        }
+                        else if (quisAutomatica)
+                        {
+                            mapeamento.PorSecao.Remove(secao);
+                            editor.WriteMessage($"\n  \"{secao}\" → montagem automática.");
+                        }
+                    }
+
+                    // Assembly das interseções.
+                    string atualJn = string.IsNullOrWhiteSpace(mapeamento.AssemblyJuncoes)
+                        ? "(nenhuma)" : mapeamento.AssemblyJuncoes;
+                    bool quisAutomaticaJn;
+                    ObjectId escolhidaJn = PlanejadorViasCorredores.SelecionarAssembly(
+                        tr, editor,
+                        $"\nINTERSEÇÕES — assembly atual: {atualJn}. Selecione a nova (Enter mantém)",
+                        out quisAutomaticaJn);
+
+                    if (!escolhidaJn.IsNull)
+                    {
+                        Civil.Assembly? assemblyJn = tr.GetObject(escolhidaJn, OpenMode.ForRead, false) as Civil.Assembly;
+                        if (assemblyJn != null)
+                        {
+                            mapeamento.AssemblyJuncoes = assemblyJn.Name;
+                            editor.WriteMessage($"\n  Interseções → \"{assemblyJn.Name}\".");
+                        }
+                    }
+                    else if (quisAutomaticaJn)
+                    {
+                        mapeamento.AssemblyJuncoes = string.Empty;
+                        editor.WriteMessage("\n  Interseções → montagem automática.");
+                    }
+
+                    tr.Commit();
+                }
+
+                mapeamento.Salvar();
+                editor.WriteMessage($"\nMapeamento salvo em {MapeamentoAssemblies.ObterCaminhoArquivo()}");
+                editor.WriteMessage("\nDica: monte a assembly das interseções com uma pista LARGA no lado direito " +
+                    "(ela preenche do meio-fio até o centro do cruzamento).");
+            }
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
+            {
+                editor.WriteMessage($"\nErro AutoCAD ao definir assemblies: {ex.Message}");
+            }
+            catch (System.Exception ex)
+            {
+                editor.WriteMessage($"\nErro ao definir assemblies: {ex.Message}");
             }
         }
     }

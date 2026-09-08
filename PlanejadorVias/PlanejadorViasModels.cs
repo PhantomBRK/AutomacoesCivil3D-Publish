@@ -308,6 +308,73 @@ namespace AutomacoesCivil3D
     }
 
     /// <summary>
+    /// Mapeamento persistido de assemblies para os corredores: nome da seção-tipo →
+    /// nome da assembly do desenho, mais a assembly usada nas interseções.
+    /// Gravado em %AppData%\AutomacoesCivil3D\PlanejadorVias\Assemblies.json.
+    /// </summary>
+    public sealed class MapeamentoAssemblies
+    {
+        private static readonly JsonSerializerOptions JsonOpcoes = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+
+        public Dictionary<string, string> PorSecao { get; set; } =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        public string AssemblyJuncoes { get; set; } = string.Empty;
+
+        public static string ObterCaminhoArquivo()
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            return Path.Combine(appData, "AutomacoesCivil3D", "PlanejadorVias", "Assemblies.json");
+        }
+
+        public static MapeamentoAssemblies Carregar()
+        {
+            try
+            {
+                string caminho = ObterCaminhoArquivo();
+                if (File.Exists(caminho))
+                {
+                    MapeamentoAssemblies? lido = JsonSerializer.Deserialize<MapeamentoAssemblies>(
+                        File.ReadAllText(caminho), JsonOpcoes);
+                    if (lido != null)
+                    {
+                        lido.PorSecao = new Dictionary<string, string>(lido.PorSecao, StringComparer.OrdinalIgnoreCase);
+                        return lido;
+                    }
+                }
+            }
+            catch
+            {
+                // Arquivo corrompido: recomeça vazio.
+            }
+
+            return new MapeamentoAssemblies();
+        }
+
+        public void Salvar()
+        {
+            try
+            {
+                string caminho = ObterCaminhoArquivo();
+                string? pasta = Path.GetDirectoryName(caminho);
+                if (!string.IsNullOrEmpty(pasta))
+                {
+                    Directory.CreateDirectory(pasta);
+                }
+
+                File.WriteAllText(caminho, JsonSerializer.Serialize(this, JsonOpcoes));
+            }
+            catch
+            {
+                // Persistência é conveniência; falha não interrompe o comando.
+            }
+        }
+    }
+
+    /// <summary>
     /// Arquivo JSON persistido com as seções-tipo do usuário.
     /// </summary>
     internal sealed class SecoesTipoArquivo

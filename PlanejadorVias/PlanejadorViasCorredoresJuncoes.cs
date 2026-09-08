@@ -44,7 +44,9 @@ namespace AutomacoesCivil3D
             Transaction tr,
             Database db,
             CivilDocument civilDoc,
-            ObjectId superficieId)
+            ObjectId superficieId,
+            Editor? editor,
+            MapeamentoAssemblies mapeamento)
         {
             ResultadoCorredores resultado = new ResultadoCorredores();
 
@@ -53,6 +55,49 @@ namespace AutomacoesCivil3D
             if (retornos.Count == 0)
             {
                 resultado.Avisos.Add("Nenhum retorno de meio-fio de junção encontrado — desenhe vias que se cruzem antes.");
+                return resultado;
+            }
+
+            // Assembly das interseções: mapeamento do usuário → seleção na tela →
+            // automática (só se pedida) → pular as interseções por completo.
+            bool usarAutomatica = false;
+            ObjectId assemblyJuncoes = ObjectId.Null;
+
+            if (!string.IsNullOrWhiteSpace(mapeamento.AssemblyJuncoes))
+            {
+                assemblyJuncoes = LocalizarAssemblyPorNome(tr, civilDoc, mapeamento.AssemblyJuncoes);
+                if (assemblyJuncoes.IsNull)
+                {
+                    resultado.Avisos.Add($"Assembly das interseções \"{mapeamento.AssemblyJuncoes}\" não existe neste desenho.");
+                }
+            }
+
+            if (assemblyJuncoes.IsNull && editor != null)
+            {
+                assemblyJuncoes = PlanejadorViasCorredores.SelecionarAssembly(
+                    tr, editor,
+                    "\nSelecione a ASSEMBLY das INTERSEÇÕES (pista larga no lado direito)",
+                    out usarAutomatica);
+
+                if (!assemblyJuncoes.IsNull)
+                {
+                    Civil.Assembly? escolhida = tr.GetObject(assemblyJuncoes, OpenMode.ForRead, false) as Civil.Assembly;
+                    if (escolhida != null)
+                    {
+                        mapeamento.AssemblyJuncoes = escolhida.Name;
+                        mapeamento.Salvar();
+                    }
+                }
+            }
+            else if (assemblyJuncoes.IsNull && editor == null)
+            {
+                usarAutomatica = true;
+            }
+
+            if (assemblyJuncoes.IsNull && !usarAutomatica)
+            {
+                resultado.Avisos.Add("Interseções puladas: nenhuma assembly definida. " +
+                    "Use PLANVIAS_DEFINIR_ASSEMBLIES e rode PLANVIAS_CORREDORES_JUNCOES.");
                 return resultado;
             }
 
@@ -85,7 +130,8 @@ namespace AutomacoesCivil3D
                 try
                 {
                     if (CriarBaselineDoRetorno(tr, db, civilDoc, corredor, retorno, vias,
-                        superficieId, assembliesPorLargura, nomeBaseline, resultado))
+                        superficieId, assembliesPorLargura, nomeBaseline, resultado,
+                        assemblyJuncoes, usarAutomatica))
                     {
                         criados++;
                     }
@@ -254,8 +300,39 @@ namespace AutomacoesCivil3D
             ObjectId superficieId,
             Dictionary<string, ObjectId> assembliesPorLargura,
             string nomeBaseline,
-            ResultadoCorredores resultado)
+            ResultadoCorredores resultado,
+            ObjectId assemblyFixa,
+            bool usarAutomatica)
         {
+            // Cotas nas duas pontas ANTES de criar qualquer coisa: se não amarrarem
+            // nos greides das vias nem na superfície, o retorno é pulado — evita
+            // interseções sem sentido penduradas na cota 0.
+            double cotaInicio;
+            double cotaFim;
+            bool okInicio = TentarCotaNaBorda(tr, civilDoc, vias, retorno, retorno.PontoFinal, superficieId, out cotaInicio);
+            bool okFim = TentarCotaNaBorda(tr, civilDoc, vias, retorno, retorno.PontoInicial, superficieId, out cotaFim);
+            if (!okInicio || !okFim)
+            {
+                resultado.Avisos.Add($"Retorno {retorno.Identificador} pulado: sem greide das vias nem superfície " +
+                    "para amarrar as cotas. Rode PLANVIAS_CRIAR_CORREDORES antes.");
+                return false;
+            }
+
+            // Assembly de pista para dentro do cruzamento: a definida pelo usuário
+            // ou, se ele optou pela automática, uma por faixa de largura.
+            ObjectId assemblyId = assemblyFixa;
+            if (assemblyId.IsNull && usarAutomatica)
+            {
+                double largura = LarguraAteOCentro(tr, vias, retorno);
+                assemblyId = ObterAssemblyDePista(tr, civilDoc, largura, assembliesPorLargura, resultado);
+            }
+
+            if (assemblyId.IsNull)
+            {
+                resultado.Avisos.Add($"Retorno {retorno.Identificador} pulado: sem assembly das interseções.");
+                return false;
+            }
+
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
             BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
 
@@ -299,9 +376,6 @@ namespace AutomacoesCivil3D
 
             // Perfil: cotas nas pontas amarradas aos greides das vias (menos o
             // caimento da pista até a borda), interpolação reta no meio.
-            double cotaInicio = CotaNaBorda(tr, civilDoc, vias, retorno, retorno.PontoFinal, superficieId, resultado.Avisos);
-            double cotaFim = CotaNaBorda(tr, civilDoc, vias, retorno, retorno.PontoInicial, superficieId, resultado.Avisos);
-
             ObjectId perfilId = Civil.Profile.CreateByLayout(
                 "PF_JN_" + retorno.Identificador,
                 alinhamentoId,
@@ -313,10 +387,6 @@ namespace AutomacoesCivil3D
             perfil.PVIs.AddPVI(alinhamento.StartingStation, cotaInicio);
             perfil.PVIs.AddPVI(alinhamento.EndingStation, cotaFim);
 
-            // Assembly de pista para dentro do cruzamento (largura até o centro P).
-            double largura = LarguraAteOCentro(tr, vias, retorno);
-            ObjectId assemblyId = ObterAssemblyDePista(tr, civilDoc, largura, assembliesPorLargura, resultado);
-
             Civil.Baseline baseline = corredor.Baselines.Add(nomeBaseline, alinhamentoId, perfilId);
             baseline.BaselineRegions.Add("RG_1", assemblyId,
                 alinhamento.StartingStation, alinhamento.EndingStation);
@@ -326,18 +396,19 @@ namespace AutomacoesCivil3D
 
         /// <summary>
         /// Cota da borda de pavimento no ponto de tangência: greide da via dona da
-        /// borda menos o caimento até a borda; sem greide, cai para a superfície e,
-        /// por fim, para a cota 0.
+        /// borda menos o caimento até a borda; sem greide, cai para a superfície.
+        /// Retorna false quando nenhuma fonte confiável está disponível.
         /// </summary>
-        private static double CotaNaBorda(
+        private static bool TentarCotaNaBorda(
             Transaction tr,
             CivilDocument civilDoc,
             Dictionary<Guid, ViaRegistrada> vias,
             RetornoDeJuncao retorno,
             Point3d ponto,
             ObjectId superficieId,
-            List<string> avisos)
+            out double cota)
         {
+            cota = 0.0;
             foreach (Guid viaId in new[] { retorno.ViaA, retorno.ViaB })
             {
                 ViaRegistrada? via;
@@ -373,8 +444,8 @@ namespace AutomacoesCivil3D
                             continue;
                         }
 
-                        double cotaEixo = perfilVia.ElevationAt(estacao);
-                        return cotaEixo - DeclividadePista * Math.Abs(offset);
+                        cota = perfilVia.ElevationAt(estacao) - DeclividadePista * Math.Abs(offset);
+                        return true;
                     }
                 }
                 catch
@@ -390,7 +461,8 @@ namespace AutomacoesCivil3D
                     Civil.Surface? superficie = tr.GetObject(superficieId, OpenMode.ForRead, false) as Civil.Surface;
                     if (superficie != null)
                     {
-                        return superficie.FindElevationAtXY(ponto.X, ponto.Y);
+                        cota = superficie.FindElevationAtXY(ponto.X, ponto.Y);
+                        return true;
                     }
                 }
                 catch
@@ -398,9 +470,7 @@ namespace AutomacoesCivil3D
                 }
             }
 
-            avisos.Add($"Retorno {retorno.Identificador}: sem greide das vias nem superfície no ponto — cota 0 usada. " +
-                "Rode PLANVIAS_CRIAR_CORREDORES antes para amarrar as cotas.");
-            return 0.0;
+            return false;
         }
 
         /// <summary>Cruzamento dos eixos das duas vias mais próximo do arco (P).</summary>
@@ -719,10 +789,13 @@ namespace AutomacoesCivil3D
                     return;
                 }
 
+                MapeamentoAssemblies mapeamento = MapeamentoAssemblies.Carregar();
+
                 ResultadoCorredores resultado;
                 using (Transaction tr = db.TransactionManager.StartTransaction())
                 {
-                    resultado = PlanejadorViasCorredoresJuncoes.CriarCorredoresDeJuncoes(tr, db, civilDoc, superficieId);
+                    resultado = PlanejadorViasCorredoresJuncoes.CriarCorredoresDeJuncoes(
+                        tr, db, civilDoc, superficieId, editor, mapeamento);
                     tr.Commit();
                 }
 

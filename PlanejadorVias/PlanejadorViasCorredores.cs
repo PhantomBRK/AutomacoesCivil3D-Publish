@@ -34,6 +34,9 @@ namespace AutomacoesCivil3D
     {
         private const double PassoPerfilMetros = 20.0;
         private const double ComprimentoMinimoRegiao = 1.0;
+        private const double ComprimentoCurvaVertical = 40.0; // parábola simétrica nos PVIs
+        private const double RaioSuavizacaoGreide = 15.0;     // média móvel da cota do terreno
+        private const double FolgaPviJuncao = 12.0;           // amostras regulares afastadas das junções
 
         public static ResultadoCorredores CriarCorredores(
             Transaction tr,
@@ -57,12 +60,17 @@ namespace AutomacoesCivil3D
             Dictionary<string, ObjectId> assembliesPorSecao = new Dictionary<string, ObjectId>(StringComparer.OrdinalIgnoreCase);
             int posicaoAssembly = 0;
 
+            // Cota única por ponto de cruzamento: as duas vias recebem um PVI com a
+            // MESMA cota na junção, eliminando degraus entre os corredores.
+            Dictionary<(long, long), double> cotasDasJuncoes = new Dictionary<(long, long), double>();
+
             foreach (ViaRegistrada via in vias.Values.OrderBy(v => v.Secao, StringComparer.OrdinalIgnoreCase))
             {
                 try
                 {
                     CriarParaVia(tr, db, civilDoc, via, vias, superficieId, raioMeioFio,
-                        assembliesPorSecao, ref posicaoAssembly, resultado, editor, mapeamento);
+                        assembliesPorSecao, ref posicaoAssembly, resultado, editor, mapeamento,
+                        cotasDasJuncoes);
                 }
                 catch (System.Exception ex)
                 {
@@ -89,7 +97,8 @@ namespace AutomacoesCivil3D
             ref int posicaoAssembly,
             ResultadoCorredores resultado,
             Editor? editor,
-            MapeamentoAssemblies mapeamento)
+            MapeamentoAssemblies mapeamento,
+            Dictionary<(long, long), double> cotasDasJuncoes)
         {
             Polyline? eixo = tr.GetObject(via.EixoId, OpenMode.ForRead, false) as Polyline;
             if (eixo == null || eixo.IsErased)
@@ -138,7 +147,9 @@ namespace AutomacoesCivil3D
                 PrimeiroItem(civilDoc.Styles.LabelSetStyles.ProfileLabelSetStyles));
 
             Civil.Profile perfil = (Civil.Profile)tr.GetObject(perfilId, OpenMode.ForWrite);
-            AdicionarPVIs(tr, perfil, alinhamento, superficieId, nomeVia, resultado.Avisos);
+            List<(double Estacao, double Cota)> pvisDeJuncao = PVIsDeJuncao(
+                tr, via, todasVias, alinhamento, superficieId, cotasDasJuncoes);
+            AdicionarPVIs(tr, perfil, alinhamento, superficieId, nomeVia, resultado.Avisos, pvisDeJuncao);
             resultado.Perfis++;
 
             // 3. Assembly da seção-tipo: mapeamento do usuário → seleção na tela →
@@ -189,13 +200,90 @@ namespace AutomacoesCivil3D
         // Perfil: PVIs amostrados na superfície (ou plano na cota 0)
         // ------------------------------------------------------------------
 
-        private static void AdicionarPVIs(
+        /// <summary>
+        /// Estações e cotas dos cruzamentos desta via com as demais. A cota de cada
+        /// cruzamento é única (dicionário por ponto), garantindo que as duas vias se
+        /// encontrem exatamente na mesma altura na junção.
+        /// </summary>
+        internal static List<(double Estacao, double Cota)> PVIsDeJuncao(
+            Transaction tr,
+            ViaRegistrada via,
+            Dictionary<Guid, ViaRegistrada> todasVias,
+            Civil.Alignment alinhamento,
+            ObjectId superficieId,
+            Dictionary<(long, long), double> cotasDasJuncoes)
+        {
+            List<(double, double)> resultado = new List<(double, double)>();
+
+            Civil.Surface? superficie = null;
+            if (!superficieId.IsNull)
+            {
+                superficie = tr.GetObject(superficieId, OpenMode.ForRead, false) as Civil.Surface;
+            }
+
+            Curve? eixo = tr.GetObject(via.EixoId, OpenMode.ForRead, false) as Curve;
+            if (eixo == null)
+            {
+                return resultado;
+            }
+
+            foreach (ViaRegistrada outra in todasVias.Values.Where(v => v.Id != via.Id))
+            {
+                Curve? eixoOutra = tr.GetObject(outra.EixoId, OpenMode.ForRead, false) as Curve;
+                if (eixoOutra == null || eixoOutra.IsErased)
+                {
+                    continue;
+                }
+
+                Point3dCollection pontos = new Point3dCollection();
+                try
+                {
+                    eixo.IntersectWith(eixoOutra, Intersect.OnBothOperands, pontos, IntPtr.Zero, IntPtr.Zero);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                foreach (Point3d ponto in pontos)
+                {
+                    try
+                    {
+                        double estacao = 0.0;
+                        double offset = 0.0;
+                        alinhamento.StationOffset(ponto.X, ponto.Y, ref estacao, ref offset);
+
+                        (long, long) chave = ((long)Math.Round(ponto.X * 100.0), (long)Math.Round(ponto.Y * 100.0));
+                        double cota;
+                        if (!cotasDasJuncoes.TryGetValue(chave, out cota))
+                        {
+                            cota = superficie != null
+                                ? superficie.FindElevationAtXY(ponto.X, ponto.Y)
+                                : 0.0;
+                            cotasDasJuncoes[chave] = cota;
+                        }
+
+                        resultado.Add((estacao, cota));
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            return resultado
+                .OrderBy(p => p.Item1)
+                .ToList();
+        }
+
+        internal static void AdicionarPVIs(
             Transaction tr,
             Civil.Profile perfil,
             Civil.Alignment alinhamento,
             ObjectId superficieId,
             string nomeVia,
-            List<string> avisos)
+            List<string> avisos,
+            List<(double Estacao, double Cota)> pvisDeJuncao)
         {
             double inicio = alinhamento.StartingStation;
             double fim = alinhamento.EndingStation;
@@ -213,17 +301,16 @@ namespace AutomacoesCivil3D
                 for (double estacao = inicio; estacao < fim + PassoPerfilMetros / 2.0; estacao += PassoPerfilMetros)
                 {
                     double estacaoLimitada = Math.Min(estacao, fim);
-                    try
+
+                    // Perto das junções quem manda é o PVI da junção (cota compartilhada).
+                    bool pertoDeJuncao = pvisDeJuncao.Any(j => Math.Abs(j.Estacao - estacaoLimitada) < FolgaPviJuncao);
+                    if (!pertoDeJuncao)
                     {
-                        double x = 0.0;
-                        double y = 0.0;
-                        alinhamento.PointLocation(estacaoLimitada, 0.0, ref x, ref y);
-                        double cota = superficie.FindElevationAtXY(x, y);
-                        pvis.Add((estacaoLimitada, cota));
-                    }
-                    catch
-                    {
-                        // Estação fora da superfície: ignora este PVI.
+                        double cota;
+                        if (TentarCotaSuavizada(superficie, alinhamento, estacaoLimitada, inicio, fim, out cota))
+                        {
+                            pvis.Add((estacaoLimitada, cota));
+                        }
                     }
 
                     if (estacaoLimitada >= fim)
@@ -232,6 +319,9 @@ namespace AutomacoesCivil3D
                     }
                 }
             }
+
+            // PVIs das junções entram sempre (cota única entre as vias).
+            pvis.AddRange(pvisDeJuncao.Where(j => j.Estacao > inicio + 0.5 && j.Estacao < fim - 0.5));
 
             if (pvis.Count < 2)
             {
@@ -245,17 +335,97 @@ namespace AutomacoesCivil3D
                 pvis.Add((fim, 0.0));
             }
 
-            foreach ((double estacao, double cota) in pvis)
+            // Ordena e remove estações praticamente coincidentes.
+            List<(double Estacao, double Cota)> ordenados = pvis
+                .OrderBy(p => p.Estacao)
+                .ToList();
+            List<(double Estacao, double Cota)> finais = new List<(double, double)>();
+            foreach ((double estacao, double cota) in ordenados)
             {
+                if (finais.Count == 0 || estacao - finais[finais.Count - 1].Estacao > 1.0)
+                {
+                    finais.Add((estacao, cota));
+                }
+            }
+
+            for (int i = 0; i < finais.Count; i++)
+            {
+                (double estacao, double cota) = finais[i];
                 try
                 {
+                    bool interno = i > 0 && i < finais.Count - 1;
+                    if (interno)
+                    {
+                        // Curva vertical parabólica no PVI, limitada pela distância aos
+                        // vizinhos para as curvas não se sobreporem.
+                        double distanciaVizinhos = Math.Min(
+                            estacao - finais[i - 1].Estacao,
+                            finais[i + 1].Estacao - estacao);
+                        double comprimentoCurva = Math.Min(ComprimentoCurvaVertical, 0.8 * distanciaVizinhos);
+
+                        if (comprimentoCurva >= 5.0)
+                        {
+                            perfil.PVIs.AddPVISymParabola(estacao, cota, comprimentoCurva);
+                            continue;
+                        }
+                    }
+
                     perfil.PVIs.AddPVI(estacao, cota);
                 }
                 catch
                 {
-                    // PVI coincidente/inválido: segue com os demais.
+                    try
+                    {
+                        perfil.PVIs.AddPVI(estacao, cota);
+                    }
+                    catch
+                    {
+                        // PVI coincidente/inválido: segue com os demais.
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Cota do terreno na estação com média móvel (±RaioSuavizacaoGreide) para o
+        /// greide não copiar cada ruído da superfície.
+        /// </summary>
+        private static bool TentarCotaSuavizada(
+            Civil.Surface superficie,
+            Civil.Alignment alinhamento,
+            double estacao,
+            double inicio,
+            double fim,
+            out double cota)
+        {
+            cota = 0.0;
+            double soma = 0.0;
+            int amostras = 0;
+
+            foreach (double deslocamento in new[] { -RaioSuavizacaoGreide, 0.0, RaioSuavizacaoGreide })
+            {
+                double estacaoAmostra = Math.Max(inicio, Math.Min(fim, estacao + deslocamento));
+                try
+                {
+                    double x = 0.0;
+                    double y = 0.0;
+                    alinhamento.PointLocation(estacaoAmostra, 0.0, ref x, ref y);
+                    soma += superficie.FindElevationAtXY(x, y);
+                    amostras++;
+                }
+                catch
+                {
+                    // Amostra fora da superfície: ignora.
+                }
+            }
+
+            if (amostras == 0)
+            {
+                return false;
+            }
+
+            cota = soma / amostras;
+            return true;
         }
 
         // ------------------------------------------------------------------
@@ -925,6 +1095,184 @@ namespace AutomacoesCivil3D
             catch (System.Exception ex)
             {
                 editor.WriteMessage($"\nErro ao criar corredores: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Regera os greides das vias já processadas SEM recriar nada: limpa os PVIs
+        /// dos perfis PF_VIA_* existentes, reaplica o greide novo (curvas verticais,
+        /// suavização e cota única nas junções) e reconstrói os corredores.
+        /// </summary>
+        [CommandMethod("PLANVIAS_REGERAR_GREIDES")]
+        public void RegerarGreides()
+        {
+            Editor editor = Manager.DocEditor;
+            Database db = Manager.DocData;
+
+            try
+            {
+                CivilDocument civilDoc = Manager.DocCivil;
+
+                PromptEntityOptions opcoes = new PromptEntityOptions(
+                    "\nSelecione a superfície do terreno para o greide (Enter = greide plano na cota 0): ");
+                opcoes.SetRejectMessage("\nSelecione uma superfície do Civil 3D.");
+                opcoes.AddAllowedClass(typeof(Civil.Surface), false);
+                opcoes.AllowNone = true;
+
+                ObjectId superficieId = ObjectId.Null;
+                PromptEntityResult selecao = editor.GetEntity(opcoes);
+                if (selecao.Status == PromptStatus.OK)
+                {
+                    superficieId = selecao.ObjectId;
+                }
+                else if (selecao.Status != PromptStatus.None)
+                {
+                    editor.WriteMessage("\nRegeneração cancelada.");
+                    return;
+                }
+
+                int regerados = 0;
+                List<string> avisos = new List<string>();
+
+                using (Transaction tr = db.TransactionManager.StartTransaction())
+                {
+                    Dictionary<Guid, ViaRegistrada> vias = PlanejadorViasJuncoes.CarregarVias(tr, db);
+                    Dictionary<(long, long), double> cotasDasJuncoes = new Dictionary<(long, long), double>();
+
+                    foreach (ViaRegistrada via in vias.Values)
+                    {
+                        try
+                        {
+                            string idCurto = via.Id.ToString("N").Substring(0, 8).ToUpperInvariant();
+                            Civil.Alignment? alinhamento = LocalizarAlinhamento(tr, civilDoc, "AL_VIA_" + idCurto);
+                            if (alinhamento == null)
+                            {
+                                continue; // via ainda sem corredor: use PLANVIAS_CRIAR_CORREDORES
+                            }
+
+                            Civil.Profile? perfil = null;
+                            foreach (ObjectId perfilId in alinhamento.GetProfileIds())
+                            {
+                                Civil.Profile? candidato = tr.GetObject(perfilId, OpenMode.ForRead, false) as Civil.Profile;
+                                if (candidato != null &&
+                                    candidato.Name.StartsWith("PF_VIA_", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    perfil = candidato;
+                                    break;
+                                }
+                            }
+
+                            if (perfil == null)
+                            {
+                                avisos.Add($"VIA_{idCurto}: perfil PF_VIA_ não encontrado — pulada.");
+                                continue;
+                            }
+
+                            perfil.UpgradeOpen();
+                            LimparPVIs(perfil);
+
+                            List<(double Estacao, double Cota)> pvisDeJuncao = PlanejadorViasCorredores.PVIsDeJuncao(
+                                tr, via, vias, alinhamento, superficieId, cotasDasJuncoes);
+                            PlanejadorViasCorredores.AdicionarPVIs(tr, perfil, alinhamento, superficieId, "VIA_" + idCurto,
+                                avisos, pvisDeJuncao);
+
+                            RebuildCorredorPorNome(tr, civilDoc, "COR_VIA_" + idCurto, avisos);
+                            regerados++;
+                        }
+                        catch (System.Exception ex)
+                        {
+                            avisos.Add($"Via {via.Id.ToString("N").Substring(0, 8)}: {ex.Message}");
+                        }
+                    }
+
+                    RebuildCorredorPorNome(tr, civilDoc, PlanejadorViasCorredoresJuncoes.NomeCorredorJuncoes, avisos);
+                    tr.Commit();
+                }
+
+                editor.WriteMessage($"\n{regerados} greide(s) regenerado(s) com curvas verticais, suavização " +
+                    "e cotas casadas nas junções; corredores reconstruídos.");
+                foreach (string aviso in avisos.Distinct().Take(12))
+                {
+                    editor.WriteMessage($"\n  Aviso: {aviso}");
+                }
+            }
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
+            {
+                editor.WriteMessage($"\nErro AutoCAD ao regerar greides: {ex.Message}");
+            }
+            catch (System.Exception ex)
+            {
+                editor.WriteMessage($"\nErro ao regerar greides: {ex.Message}");
+            }
+        }
+
+        private static void LimparPVIs(Civil.Profile perfil)
+        {
+            List<Civil.ProfilePVI> existentes = new List<Civil.ProfilePVI>();
+            foreach (Civil.ProfilePVI pvi in perfil.PVIs)
+            {
+                existentes.Add(pvi);
+            }
+
+            foreach (Civil.ProfilePVI pvi in existentes)
+            {
+                try
+                {
+                    perfil.PVIs.Remove(pvi);
+                }
+                catch
+                {
+                    // Alguns PVIs de extremidade podem resistir; os novos sobrescrevem.
+                }
+            }
+        }
+
+        private static Civil.Alignment? LocalizarAlinhamento(Transaction tr, CivilDocument civilDoc, string nome)
+        {
+            try
+            {
+                foreach (ObjectId id in civilDoc.GetAlignmentIds())
+                {
+                    Civil.Alignment? alinhamento = tr.GetObject(id, OpenMode.ForRead, false) as Civil.Alignment;
+                    if (alinhamento != null && string.Equals(alinhamento.Name, nome, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return alinhamento;
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
+        private static void RebuildCorredorPorNome(Transaction tr, CivilDocument civilDoc, string nome, List<string> avisos)
+        {
+            try
+            {
+                foreach (object item in (IEnumerable)civilDoc.CorridorCollection)
+                {
+                    ObjectId id = item is ObjectId objectId
+                        ? objectId
+                        : item is Civil.Corridor direto ? direto.ObjectId : ObjectId.Null;
+                    if (id.IsNull)
+                    {
+                        continue;
+                    }
+
+                    Civil.Corridor? corredor = tr.GetObject(id, OpenMode.ForRead, false) as Civil.Corridor;
+                    if (corredor != null && string.Equals(corredor.Name, nome, StringComparison.OrdinalIgnoreCase))
+                    {
+                        corredor.UpgradeOpen();
+                        corredor.Rebuild();
+                        return;
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                avisos.Add($"Rebuild de \"{nome}\" falhou ({ex.Message}).");
             }
         }
 
